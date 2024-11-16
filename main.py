@@ -20,7 +20,7 @@ def clear_console():
     if platform.system() == "Windows":
         os.system("cls")
     else:
-        clear_console()
+        os.system("clear")
 
 def check_folders():
     if not os.path.exists(input_folder):
@@ -173,6 +173,12 @@ if __name__ == "__main__":
 
                         pattern = input("Order of pdf to merge comma seperated: ").strip()
                         if re.fullmatch(r"^\d+(,\d+)*$", pattern):
+                            pattern = list(map(int, pattern.split(",")))
+                            for i in range(len(pdf_files)):
+                                if not (0 <= pattern[i] < len(pdf_files)):
+                                    print("Please enter the valid file number!")
+                                    rewrite_console_line(2)
+                                    break
                             break
                         else:
                             print("Invalid character. please input only number seperated by comma")
