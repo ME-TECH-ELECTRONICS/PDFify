@@ -1,0 +1,10 @@
+pillow~=11.0.0
+pip~=23.2.1
+lxml~=5.3.0
+colorama~=0.4.6
+pikepdf~=9.4.1
+packaging~=24.2
+Deprecated~=1.2.15
+wrapt~=1.16.0
+tqdm~=4.67.0
+PyPDF2~=3.0.1
