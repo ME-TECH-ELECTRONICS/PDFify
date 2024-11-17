@@ -14,21 +14,19 @@ from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 init(autoreset=True)
 output_folder = "output/"
 input_folder = "input/"
-pdfs_folder = "pdfs/"
 
 error = False
 
-def clear_console():
+def clear_console(name_print = True):
     if platform.system() == "Windows":
         os.system("cls")
     else:
         os.system("clear")
-    print(Back.BLUE + "PDFify v1.0")
+    if name_print:
+        print(Back.BLUE + "PDFify v1.0")
 def check_folders():
     if not os.path.exists(input_folder):
         os.makedirs(input_folder)
-    if not os.path.exists(pdfs_folder):
-        os.makedirs(pdfs_folder)
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
@@ -42,78 +40,60 @@ def shorten_filename(filename, max_length=12):
         return name[:max_length - len(ext) - 3] + "..." + ext
     return filename
 
-def docx_to_pdf(input_path, output_folder):
-    output_pdf = os.path.join(output_folder, os.path.basename(input_path).replace(".docx", ".pdf"))
-    subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", input_path, "--outdir", output_folder],stdout=subprocess.DEVNULL,
+def docx_to_pdf(input_path, input_dir):
+    output_pdf = os.path.join(input_dir, os.path.basename(input_path).replace(".docx", ".pdf"))
+    subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", input_path, "--outdir", input_dir],stdout=subprocess.DEVNULL,
                    stderr=subprocess.DEVNULL)
     return output_pdf
 
-def ppt_to_pdf(input_path, output_folder):
-    output_pdf = os.path.join(output_folder, os.path.basename(input_path).replace(".pptx", ".pdf"))
-    subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", input_path, "--outdir", output_folder],stdout=subprocess.DEVNULL,
+def ppt_to_pdf(input_path, output_dir):
+    output_pdf = os.path.join(output_dir, os.path.basename(input_path).replace(".pptx", ".pdf"))
+    subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", input_path, "--outdir", output_dir],stdout=subprocess.DEVNULL,
                    stderr=subprocess.DEVNULL)
     return output_pdf
 
-def image_to_pdf(input_path, output_folder):
+def image_to_pdf(input_path, output_dir):
     img = Image.open(input_path)
-    output_pdf = os.path.join(output_folder, os.path.basename(input_path).rsplit('.', 1)[0] + ".pdf")
+    output_pdf = os.path.join(output_dir, os.path.basename(input_path).rsplit('.', 1)[0] + ".pdf")
     img.convert('RGB').save(output_pdf)
     return output_pdf
 
-def compress_pdf(input_pdf, output_folder):
-    compressed_pdf = os.path.join(output_folder, "compressed_" + os.path.basename(input_pdf))
+def compress_pdf(input_pdf, output_dir):
+    compressed_pdf = os.path.join(output_dir, "compressed_" + os.path.basename(input_pdf))
     with pikepdf.open(input_pdf) as pdf:
         pdf.save(compressed_pdf)
     return compressed_pdf
 
-def compress_pdfs(input_folder, output_folder):
-    if os.path.isdir(file_paths):
-        pdf_files = [os.path.join(file_paths, f) for f in os.listdir(file_paths) if f.lower().endswith('.pdf')]
-    else:
-        pdf_files = file_paths
-    with tqdm(total=len(pdf_files), desc="Compressing PDFs") as progress_bar:
-        for path in pdf_files:
-            compressed_pdf = os.path.join(output_folder, "compressed_" + os.path.basename(path))
-            with pikepdf.open(input_pdf) as pdf:
-                pdf.save(compressed_pdf)
-                progress_bar.update(1)
+def compress_pdfs(input_dir, output_dir):
+    if os.path.isdir(input_dir):
+        pdfs = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.lower().endswith('.pdf')]
+        with tqdm(total=len(pdf_files), desc="Compressing PDFs") as progress_bar:
+            for file in pdfs:
+                compressed_pdf = os.path.join(output_dir, "compressed_" + os.path.basename(file))
+                with pikepdf.open(file) as pdf:
+                    pdf.save(compressed_pdf)
+                    progress_bar.update(1)
 
 def merge_pdfs(file_paths, output_path):
     merger = PdfMerger()
     with tqdm(total=len(file_paths), desc="Merging PDFs") as progress_bar:
         for path in file_paths:
-            merger.append(os.path.join(pdfs_folder,path))
+            merger.append(os.path.join(input_folder,path))
             progress_bar.update(1)
         merger.write(output_path)
         merger.close()
         compress_pdf(output_path,output_folder)
         os.remove(output_path)
-'''
-def merge_pdfs(file_paths, output_path):
-    merger = PdfMerger()
 
-    if os.path.isdir(file_paths):
-        pdf_files = [os.path.join(file_paths, f) for f in os.listdir(file_paths) if f.lower().endswith('.pdf')]
-        pdf_files.sort()
-    else:
-        pdf_files = file_paths
-    with tqdm(total=len(pdf_files), desc="Merging PDFs") as progress_bar:
-        for path in pdf_files:
-            merger.append(path)
-            progress_bar.update(1)
-
-    merger.write(output_path)
-    merger.close()
-'''
 def split_pdf(input_path, start_page, end_page, output_path):
     reader = PdfReader(input_path)
     writer = PdfWriter()
-    for i in range(start_page, end_page + 1):
-        writer.add_page(reader.pages[i])
+    for j in range(start_page, end_page + 1):
+        writer.add_page(reader.pages[j])
     with open(output_path, "wb") as f:
         writer.write(f)
 
-def convert_and_compress_folder(folder_path, output_folder):
+def convert_and_compress_folder(folder_path, output_dir):
     files = os.listdir(folder_path)
     total_files = len(files)
 
@@ -124,25 +104,25 @@ def convert_and_compress_folder(folder_path, output_folder):
             short_name = shorten_filename(filename)
             if ext.lower() == '.docx':
                 with tqdm(total=2, desc=f"Converting {short_name}", leave=False) as sub_bar:
-                    pdf_path = docx_to_pdf(file_path, output_folder)
+                    pdf_path = docx_to_pdf(file_path, output_dir)
                     sub_bar.update(1)
-                    compressed_pdf_path = compress_pdf(pdf_path, output_folder)
+                    compress_pdf(pdf_path, output_dir)
                     sub_bar.update(1)
                     os.remove(pdf_path)
 
             elif ext.lower() == '.pptx':
                 with tqdm(total=2, desc=f"Converting {short_name}", leave=False) as sub_bar:
-                    pdf_path = ppt_to_pdf(file_path, output_folder)
+                    pdf_path = ppt_to_pdf(file_path, output_dir)
                     sub_bar.update(1)
-                    compressed_pdf_path = compress_pdf(pdf_path, output_folder)
+                    compress_pdf(pdf_path, output_dir)
                     sub_bar.update(1)
                     os.remove(pdf_path)
 
             elif ext.lower() in ['.jpg', '.jpeg', '.png']:
                 with tqdm(total=2, desc=f"Converting {short_name}", leave=False) as sub_bar:
-                    pdf_path = image_to_pdf(file_path, output_folder)
+                    pdf_path = image_to_pdf(file_path, output_dir)
                     sub_bar.update(1)
-                    compressed_pdf_path = compress_pdf(pdf_path, output_folder)
+                    compress_pdf(pdf_path, output_dir)
                     sub_bar.update(1)
                     os.remove(pdf_path)
 
@@ -160,7 +140,7 @@ if __name__ == "__main__":
         check_folders()
         while True:
             clear_console()
-            print(Fore.YELLOW + "1 - Convert all to pdf\n2 - Merge pdf\n3 - Compress pdf\nq - Quit")
+            print(Fore.YELLOW + "1 - Convert all to pdf\n2 - Merge pdf\n3 - Compress pdf\n4 - Split pdf\nq - Quit")
             option = input("Choose an option to start: ")
             clear_console()
             if option == "1":
@@ -168,7 +148,7 @@ if __name__ == "__main__":
             elif option == "2":
                 while True:
                     clear_console()
-                    pdf_files = [file for file in os.listdir(pdfs_folder) if file.endswith(".pdf")]
+                    pdf_files = [file for file in os.listdir(input_folder) if file.endswith(".pdf")]
                     i=1
                     for file in pdf_files:
                         print(f"{i}. {shorten_filename(file, 50)}")
@@ -176,7 +156,6 @@ if __name__ == "__main__":
                     merge_all = input("Merge all pdf [y/N]: ").lower() or "n"
                     y1 = term.get_location()[0]
                     while True:
-
                         pattern = input("Order of pdf to merge comma seperated: ").strip()
                         if re.fullmatch(r"^\d+(,\d+)*$", pattern):
                             pattern = list(map(int, pattern.split(",")))
@@ -210,11 +189,42 @@ if __name__ == "__main__":
                         break
                         
             elif option == "3":
-                compress_pdfs(pdfs_folder, output_folder)
+                clear_console()
+                pdf_files = [file for file in os.listdir(input_folder) if file.endswith(".pdf")]
+                i=1
+                for file in pdf_files:
+                    print(f"{i}. {shorten_filename(file, 50)}")
+                    i += 1
+                compress_all = input("Compress all pdf [y/N]: ").lower() or "n"
+                y1 = term.get_location()[0]
+                if compress_all == "n":
+                    while True:
+                        compress_list = input("List of pdf to compress comma seperated: ").strip()
+                        if re.fullmatch(r"^\d+(,\d+)*$", compress_list):
+                           compress_list = list(map(int, compress_list.split(",")))
+                           for i in range(len(compress_list)):
+                               if 0 <= compress_list[i]-1 < len(pdf_files): error = False
+                               else:
+                                   print("Please enter the valid file number!")
+                                   sleep(3)
+                                   rewrite_console_line(y1)
+                                   error = True
+                                   break
+                           if not error:
+                               compress_pdf_list = [pdf_files[i-1] for i in compress_list]
+                        else:
+                           print("Invalid character. please input only number seperated by comma")
+                           sleep(3)
+                           rewrite_console_line(y1)
+                else:
+                    compress_pdfs(input_folder, output_folder)
+                    break
+            elif option == "4":
+                split_pdf(input_folder + "NAUKRI_MELVIN_RIJOHN_T_(2).pdf", 0, 0, os.path.join(output_folder, "split_output.pdf"))
             elif option == "q":
                 print(Fore.RED + "Quitting...")
                 sleep(3)
-                clear_console()
+                clear_console(False)
                 exit()
             else:
                 print("Invalid option. Try again.")
@@ -224,12 +234,4 @@ if __name__ == "__main__":
         clear_console()
         print(Fore.RED + Style.BRIGHT + "SIGINT detected. Quitting...")
         sleep(1)
-        clear_console()
-
-
-'''
-pdfs_to_merge = ["/path/to/file1.pdf", "/path/to/file2.pdf"]
-
-
-split_pdf("/path/to/file.pdf", 0, 2, os.path.join(output_folder, "split_output.pdf"))
-'''
+        clear_console(False)
