@@ -40,6 +40,16 @@ def shorten_filename(filename, max_length=12):
         return name[:max_length - len(ext) - 3] + "..." + ext
     return filename
 
+def parse_to_numbers(input_string):
+    pattern = r'(\d+)(?:-(\d+))?'
+    numbers = []
+    matches = re.findall(pattern, input_string)
+    for match in matches:
+        start = int(match[0])
+        end = int(match[1]) if match[1] else start
+        numbers.extend(range(start, end + 1))
+    return numbers
+
 def docx_to_pdf(input_path, input_dir):
     output_pdf = os.path.join(input_dir, os.path.basename(input_path).replace(".docx", ".pdf"))
     subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", input_path, "--outdir", input_dir],stdout=subprocess.DEVNULL,
@@ -201,6 +211,7 @@ if __name__ == "__main__":
             elif action == "3":
                user_interaction("C")
             elif action == "4":
+                
                 split_pdf(input_folder + "NAUKRI_MELVIN_RIJOHN_T_(2).pdf", 0, 0, os.path.join(output_folder, "split_output.pdf"))
             elif action == "q":
                 print(Fore.RED + "Quitting...")

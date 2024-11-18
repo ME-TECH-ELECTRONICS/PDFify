@@ -1,23 +1,28 @@
-def user_interactor(action, msg, )
+'''
+import re
+
+pattern = r"^(\d+(-\d+)?)(,\s*\d+(-\d+)?)*$"
 while True:
-    clear_console()
-    pdf_files = [file for file in os.listdir(input_folder) if file.endswith(".pdf")]
-    i = 1
-    for file in pdf_files:
-        print(f"{i}. {shorten_filename(file, 50)}")
-        i += 1
-    merge_all = input("Merge all pdf [y/N]: ").lower() or "n"
-    y1 = term.get_location()[0]
-    while True:
-        if msg == "M":
-            pattern = input("Order of pdf to merge comma seperated: ").strip()
-            if re.fullmatch(r"^\d+(,\d+)*$", pattern):
-                            pattern = list(map(int, pattern.split(",")))
-                            for i in range(len(pattern)):
-                                if 0 <= pattern[i]-1 < len(pdf_files): error = False
-                                else:
-                                    print("Please enter the valid file number!")
-                                    sleep(3)
-                                    rewrite_console_line(y1)
-                                    error = True
-                                    break
+    v = input("input seq: ")
+
+    if re.fullmatch(pattern, v):
+        print("Match!")
+    else:
+        print("No match")
+'''        
+import re
+
+def parse_to_numbers(input_string):
+    pattern = r'(\d+)(?:-(\d+))?'
+    numbers = []
+    matches = re.findall(pattern, input_string)
+    for match in matches:
+        start = int(match[0])
+        end = int(match[1]) if match[1] else start
+        numbers.extend(range(start, end + 1))
+    return numbers
+
+# Example usage
+input_string = input("input seq: ")
+result = parse_to_numbers(input_string)
+print(result)  # Output: [1, 2, 3, 7, 8, 9, 10]
