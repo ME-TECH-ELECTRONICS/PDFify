@@ -207,7 +207,7 @@ if __name__ == "__main__":
                                else:
                                    print("Please enter the valid file number!")
                                    sleep(3)
-                                   rewrite_console_line(y1)
+                                   rewrite_console_line(y1 )
                                    error = True
                                    break
                            if not error:
