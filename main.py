@@ -11,9 +11,13 @@ from colorama import Fore, Back, Style, init
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 
 init(autoreset=True)
+#Constants declearation
 output_folder = "output/"
 input_folder = "input/"
-
+MERGE = "MERGE PDF"
+COMPRESS = "COMPRESS PDF"
+SPLIT = "SPLIT PDF"
+CONVERT = "CONVERT TO PDF"
 error = False
 
 def clear_console(name_print = True):
@@ -144,10 +148,17 @@ def user_interaction(option):
     split_pdf1 = "0"
     merge_all_pdf = "n"
     compress_all_pdf = "n"
+    allowed_types = {"docx","ppt","jpg","jpeg","png"}
+    
     while True:
         clear_console()
-        list_of_pdfs = [file for file in os.listdir(input_folder) if file.endswith(".pdf")]
-        for k, file in enumerate(list_of_pdfs, start=1):
+        
+        if option == CONVERT:
+            list_of_files = [file for file in os.listdir(input_folder) if is.path.splitext(file)[1].lower() in allowed_types]
+        else:
+            list_of_files = [file for file in os.listdir(input_folder) if file.endswith(".pdf")]
+            
+        for k, file in enumerate(list_of_files, start=1):
             print(f"{k}. {shorten_filename(file, 50)}")
         if option == "M":
             merge_all_pdf = input("Merge all pdf [y/N]: ").lower()
@@ -191,7 +202,6 @@ def user_interaction(option):
             else:
                 compress_pdf_list = list_of_pdfs
             compress_pdfs(compress_pdf_list)
-
 ##################
 ## Main Program ##
 ##################
@@ -211,6 +221,13 @@ if __name__ == "__main__":
             elif action == "3":
                user_interaction("C")
             elif action == "4":
+                while True:
+                    clear_console
+                    list_of_pdfs = [file for file in os.listdir(input_folder) if file.endswith(".pdf")]
+                    for k, file in enumerate(list_of_pdfs, start=1):
+                        print(f"{k}. {shorten_filename(file, 50)}")
+                    pdf_num = input("Select a pdf to proceed: ")
+                
                 
                 split_pdf(input_folder + "NAUKRI_MELVIN_RIJOHN_T_(2).pdf", 0, 0, os.path.join(output_folder, "split_output.pdf"))
             elif action == "q":
