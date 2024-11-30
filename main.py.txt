@@ -4,6 +4,7 @@ import pikepdf
 import subprocess
 import platform
 import blessed
+import re
 from time import sleep
 from PIL import Image
 from tqdm import tqdm
