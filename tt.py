@@ -12,7 +12,20 @@ from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 term = Terminal()
 output_folder = "output/"
 input_folder = "input/"
+MENUS = ["Convert to PDF", "Merge PDFs", "Compress PDF", "Split PDF"]
+LIBRAOFFICE_INSTALLED = False
 
+def check_app_install():
+    try:
+        subprocess.run(
+            ["libreoffice", "--version"], 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE, 
+            check=True
+        )
+        LIBRAOFFICE_INSTALLED = True
+    except FileNotFoundError:
+        LIBRAOFFICE_INSTALLED = False
 
 def parse_to_numbers(input_string: str) -> list[int]:
     numbers = []
@@ -24,14 +37,11 @@ def parse_to_numbers(input_string: str) -> list[int]:
     return numbers
 
 
-def clear_console(name_print: bool = True) -> None:
+def clear_console() -> None:
     if platform.system() == "Windows":
         os.system("cls")
     else:
         os.system("clear")
-    if name_print:
-        print(term.white_on_blue("PDFify v1.0"))
-
 
 def check_folders() -> None:
     if not os.path.exists(input_folder):
@@ -63,6 +73,18 @@ def user_input_option(prompt: str = "", default: int = 1) -> int:
         return default
 
 
+def print_title(action: str = "") -> None:
+    print(term.white_on_blue(f"PDFify v1.0 | {action.upper()}"))
+
+def print_menu(disabled: list[int]) -> None:
+    
+    for i, menu in enumerate(MENUS, start=1):
+        if i not in disabled:
+            print(term.gold(f"{i}. {menu}"))
+        else:
+            print(term.gray45(f"{i}. {menu}"))
+  
+            
 def user_input_range(prompt: str = "", default: list[int] = None) -> list[int]:
     if default is None:
         default = [1]
@@ -172,3 +194,11 @@ def convert_and_compress_folder(folder_path: str, output_dir: str) -> None:
             else:
                 print(f"Skipping unsupported file format: {filename}")
             main_bar.update(1)
+
+def user_interaction(action: int = 1) -> None:
+    while True
+        clear_console()
+        print_title()
+        print_menu()
+        interaction user_input_option("Choose an option to start: ")
+        
