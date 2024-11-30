@@ -53,12 +53,12 @@ def shorten_filename(filename: str, max_length: int = 12) -> str:
 
 
 def user_input_yn(prompt: str = "", default: str = "n") -> str:
-    return input(prompt) or default
+    return input(prompt).strip().lower() or default
 
 
 def user_input_option(prompt: str = "", default: int = 1) -> int:
     try:
-        return int(input(prompt) or default)
+        return int(input(prompt).strip() or default)
     except ValueError:
         return default
 
@@ -66,7 +66,7 @@ def user_input_option(prompt: str = "", default: int = 1) -> int:
 def user_input_range(prompt: str = "", default: list[int] = None) -> list[int]:
     if default is None:
         default = [1]
-    user_input = input(prompt)
+    user_input = input(prompt).strip()
     return parse_to_numbers(user_input) or default
 
 
