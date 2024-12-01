@@ -10,8 +10,8 @@ from blessed import Terminal
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 
 term = Terminal()
-output_folder = "output/"
-input_folder = "input/"
+OUTPUT_FOLDER = "output/"
+INPUT_FOLDER = "input/"
 MENUS = ["Convert to PDF", "Merge PDFs", "Compress PDF", "Split PDF"]
 LIBRAOFFICE_INSTALLED = False
 
@@ -161,32 +161,32 @@ def split_pdf(input_path: str, start_page: int, end_page: int, output_path: str)
         writer.write(f)
 
 
-def convert_and_compress_folder(folder_path: str, output_dir: str) -> None:
-    files = os.listdir(folder_path)
+def convert_and_compress_files() -> None:
+    files = os.listdir(INPUT_FOLDER)
     total_files = len(files)
 
     with tqdm(total=total_files, desc="Processing files") as main_bar:
         for filename in files:
-            file_path = os.path.join(folder_path, filename)
+            file_path = os.path.join(INPUT_FOLDER, filename)
             name, ext = os.path.splitext(filename)
             short_name = shorten_filename(filename)
             if ext.lower() == '.docx':
                 with tqdm(total=2, desc=f"Converting {short_name}", leave=False) as sub_bar:
-                    pdf_path = docx_to_pdf(file_path, output_dir)
+                    pdf_path = docx_to_pdf(file_path, OUTPUT_FOLDER)
                     sub_bar.update(1)
                     compress_pdf(pdf_path)
                     sub_bar.update(1)
                     os.remove(pdf_path)
             elif ext.lower() == '.pptx':
                 with tqdm(total=2, desc=f"Converting {short_name}", leave=False) as sub_bar:
-                    pdf_path = ppt_to_pdf(file_path, output_dir)
+                    pdf_path = ppt_to_pdf(file_path, OUTPUT_FOLDER)
                     sub_bar.update(1)
                     compress_pdf(pdf_path)
                     sub_bar.update(1)
                     os.remove(pdf_path)
             elif ext.lower() in ['.jpg', '.jpeg', '.png']:
                 with tqdm(total=2, desc=f"Converting {short_name}", leave=False) as sub_bar:
-                    pdf_path = image_to_pdf(file_path, output_dir)
+                    pdf_path = image_to_pdf(file_path, OUTPUT_FOLDER)
                     sub_bar.update(1)
                     compress_pdf(pdf_path)
                     sub_bar.update(1)
