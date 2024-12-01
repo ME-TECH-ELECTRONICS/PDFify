@@ -31,8 +31,8 @@ def parse_to_numbers(input_string: str) -> list[int]:
     numbers = []
     matches = re.findall(r'(\d+)(?:-(\d+))?', input_string)
     for match in matches:
-        start = int(match[0])
-        end = int(match[1]) if match[1] else start
+        start = int(match[0]) - 1
+        end = int(match[1]) - 1 if match[1] else start
         numbers.extend(range(start, end + 1))
     return numbers
 
@@ -200,5 +200,11 @@ def user_interaction(action: int = 1) -> None:
         clear_console()
         print_title()
         print_menu()
-        interaction user_input_option("Choose an option to start: ")
-        
+        op = interaction user_input_option("Choose an option to start: ")
+        if op == 1:
+            raw_files = list_files(["png","jpeg","jpg","docx","ppt"])
+            for i, file in enumerate(raw_files, start=1):
+                print(f"{i}. {shorten_filename(file, 50)}")
+            while True:
+                input_range = user_input_range("Enter file number to convert [eg: 1,3-5]: ",[i for i in range(len(raw_files))])
+                
