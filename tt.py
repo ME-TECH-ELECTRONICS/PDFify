@@ -15,6 +15,9 @@ INPUT_FOLDER = "input/"
 MENUS = ["Convert to PDF", "Merge PDFs", "Compress PDF", "Split PDF"]
 LIBRAOFFICE_INSTALLED = False
 
+class BreakLoop(Exception)
+    pass
+
 def check_app_install():
     try:
         subprocess.run(
@@ -27,6 +30,12 @@ def check_app_install():
     except FileNotFoundError:
         LIBRAOFFICE_INSTALLED = False
 
+
+def filter_valid_indices(arr1: list[int], arr2: list[int]) -> list[str]:
+    valid_indices = [index for index in arr2 if 0 <= index < len(arr1)]
+    return [arr1[index] for index in valid_indices]
+    
+    
 def parse_to_numbers(input_string: str) -> list[int]:
     numbers = []
     matches = re.findall(r'(\d+)(?:-(\d+))?', input_string)
@@ -89,7 +98,10 @@ def user_input_range(prompt: str = "", default: list[int] = None) -> list[int]:
     if default is None:
         default = [1]
     user_input = input(prompt).strip()
-    return parse_to_numbers(user_input) or default
+    if user_input == "b":
+        raise BreakLoop
+    arr = parse_to_numbers(user_input)
+    return filter_valid_indices(arr, default)
 
 
 def list_files(folder_path: str, file_type: list[str]) -> list[str]:
@@ -161,12 +173,11 @@ def split_pdf(input_path: str, start_page: int, end_page: int, output_path: str)
         writer.write(f)
 
 
-def convert_and_compress_files() -> None:
-    files = os.listdir(INPUT_FOLDER)
+def convert_and_compress_files(input_files: list[str]) -> None:
     total_files = len(files)
 
     with tqdm(total=total_files, desc="Processing files") as main_bar:
-        for filename in files:
+        for filename in input_files:
             file_path = os.path.join(INPUT_FOLDER, filename)
             name, ext = os.path.splitext(filename)
             short_name = shorten_filename(filename)
@@ -202,9 +213,44 @@ def user_interaction(action: int = 1) -> None:
         print_menu()
         op = interaction user_input_option("Choose an option to start: ")
         if op == 1:
+            clear_console()
+            print_title(MENUS[0].upper())
             raw_files = list_files(["png","jpeg","jpg","docx","ppt"])
+            if not raw_files:
+                print("No convertable files found")
+                sleep(3)
+                pass
             for i, file in enumerate(raw_files, start=1):
                 print(f"{i}. {shorten_filename(file, 50)}")
-            while True:
-                input_range = user_input_range("Enter file number to convert [eg: 1,3-5]: ",[i for i in range(len(raw_files))])
-                
+            line = term.get_location()[0]
+            try:
+                while True:
+                    input_range = user_input_range("Enter file number(s) to convert [eg: 1,3-5]: ",[i for i in range(len(raw_files))])
+                    if input_range:
+                        convert_and_compress_files([raw_files[i] for i in input_range if 0 <= i < len(raw_files)])
+                    else:
+                        print("Enter atleast 1 file to compress")
+            except BreakLoop:
+                pass
+        elif op == 2:
+            clear_console()
+            print_title(MENUS[1].upper())
+            raw_files = list_files(["pdf"])
+            if not raw_files:
+                print("No pdf files found")
+                sleep(3)
+                pass
+            for i, file in enumerate(raw_files, start=1):
+                print(f"{i}. {shorten_filename(file, 50)}")
+            line = term.get_location()[0]
+            try:
+                while True:
+                    input_range = user_input_range("Enter file number(s) to convert [eg: 1,3-5]: ",[i for i in range(len(raw_files))])
+                    if input_range:
+                        convert_and_compress_files([raw_files[i] for i in input_range if 0 <= i < len(raw_files)])
+                    else:
+                        print("Enter atleast 1 file to compress")
+                        sleep(3)
+                        rewrite_console_line(line)
+            except BreakLoop:
+                pass
