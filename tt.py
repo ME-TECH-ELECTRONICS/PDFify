@@ -12,7 +12,7 @@ from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 term = Terminal()
 OUTPUT_FOLDER = "output/"
 INPUT_FOLDER = "input/"
-MENUS = ["Convert to PDF", "Merge PDFs", "Compress PDF", "Split PDF"]
+MENUS = ["Convert to PDF", "Merge PDF", "Compress PDF", "Split PDF"]
 LIBRAOFFICE_INSTALLED = False
 
 class BreakLoop(Exception)
@@ -128,15 +128,15 @@ def ppt_to_pdf(input_path: str, output_dir: str) -> str:
     return output_pdf
 
 
-def image_to_pdf(input_path: str, output_dir: str) -> str:
+def image_to_pdf(input_path: str) -> str:
     img = Image.open(input_path)
-    output_pdf = os.path.join(output_dir, os.path.basename(input_path).rsplit('.', 1)[0] + ".pdf")
+    output_pdf = os.path.join(OUTPUT_FOLDER, os.path.basename(input_path).rsplit('.', 1)[0] + ".pdf")
     img.convert('RGB').save(output_pdf)
     return output_pdf
 
 
 def compress_pdf(input_pdf: str) -> str:
-    compressed_pdf = os.path.join(output_folder, "compressed_" + os.path.basename(input_pdf))
+    compressed_pdf = os.path.join(OUTPUT_FOLDER, "compressed_" + os.path.basename(input_pdf))
     with pikepdf.open(input_pdf) as pdf:
         pdf.save(compressed_pdf)
     return compressed_pdf
@@ -145,18 +145,18 @@ def compress_pdf(input_pdf: str) -> str:
 def compress_pdfs(input_pdf: list[str]) -> None:
     with tqdm(total=len(input_pdf), desc="Compressing PDFs") as progress_bar:
         for file in input_pdf:
-            compressed_pdf = os.path.join(output_folder, "compressed_" + os.path.basename(file))
-            with pikepdf.open(input_folder + file) as pdf:
+            compressed_pdf = os.path.join(OUTPUT_FOLDER, "compressed_" + os.path.basename(file))
+            with pikepdf.open(INPUT_FOLDER + file) as pdf:
                 pdf.save(compressed_pdf)
                 progress_bar.update(1)
 
 
 def merge_pdfs(file_paths: list[str]) -> None:
     merger = PdfMerger()
-    output_path = os.path.join(output_folder, "merged_output.pdf")
+    output_path = os.path.join(OUTPUT_FOLDER, "merged_output.pdf")
     with tqdm(total=len(file_paths), desc="Merging PDFs") as progress_bar:
         for path in file_paths:
-            merger.append(os.path.join(input_folder, path))
+            merger.append(os.path.join(INPUT_FOLDER, path))
             progress_bar.update(1)
         merger.write(output_path)
         merger.close()
@@ -247,9 +247,54 @@ def user_interaction(action: int = 1) -> None:
                 while True:
                     input_range = user_input_range("Enter file number(s) to convert [eg: 1,3-5]: ",[i for i in range(len(raw_files))])
                     if input_range:
-                        convert_and_compress_files([raw_files[i] for i in input_range if 0 <= i < len(raw_files)])
+                        merge_pdfs([raw_files[i] for i in input_range if 0 <= i < len(raw_files)])
                     else:
-                        print("Enter atleast 1 file to compress")
+                        print("Enter atleast 2 pdf to merge")
+                        sleep(3)
+                        rewrite_console_line(line)
+            except BreakLoop:
+                pass
+            
+        elif op == 3:
+            clear_console()
+            print_title(MENUS[2].upper())
+            raw_files = list_files(["pdf"])
+            if not raw_files:
+                print("No pdf files found")
+                sleep(3)
+                pass
+            for i, file in enumerate(raw_files, start=1):
+                print(f"{i}. {shorten_filename(file, 50)}")
+            line = term.get_location()[0]
+            try:
+                while True:
+                    input_range = user_input_range("Enter file number(s) to convert [eg: 1,3-5]: ",[i for i in range(len(raw_files))])
+                    if input_range:
+                        compress_pdfs([raw_files[i] for i in input_range if 0 <= i < len(raw_files)])
+                    else:
+                        print("Enter atleast 1 pdf to compress")
+                        sleep(3)
+                        rewrite_console_line(line)
+            except BreakLoop:
+                pass
+        elif op == 4:
+            clear_console()
+            print_title(MENUS[3].upper())
+            raw_files = list_files(["pdf"])
+            if not raw_files:
+                print("No pdf files found")
+                sleep(3)
+                pass
+            for i, file in enumerate(raw_files, start=1):
+                print(f"{i}. {shorten_filename(file, 50)}")
+            line = term.get_location()[0]
+            try:
+                while True:
+                    input_range = user_input_range("Enter file number(s) to convert [eg: 1,3-5]: ",[i for i in range(len(raw_files))])
+                    if input_range:
+                        split_pdf([raw_files[i] for i in input_range if 0 <= i < len(raw_files)])
+                    else:
+                        print("Enter atleast 1 page to split")
                         sleep(3)
                         rewrite_console_line(line)
             except BreakLoop:

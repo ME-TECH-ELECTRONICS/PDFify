@@ -246,3 +246,64 @@ if __name__ == "__main__":
         print(Fore.RED + Style.BRIGHT + "SIGINT detected. Quitting...")
         sleep(1)
         clear_console(False)
+        
+        
+from pypdf import PdfReader, PdfWriter
+import os
+import re
+
+
+def split_pdf(input_path: str, split_type: str, pages_or_groups=None) -> None:
+    reader = PdfReader(input_path)
+    base_name = os.path.splitext(os.path.basename(input_path))[0]
+    output_dir = os.path.dirname(input_path) or "."
+
+    if split_type == "list":
+        # Split into two PDFs based on user-specified pages
+        specified_pages = set(pages_or_groups or [])
+        writers = [PdfWriter(), PdfWriter()]
+
+        for i, page in enumerate(reader.pages):
+            writers[0 if i in specified_pages else 1].add_page(page)
+
+        for idx, writer in enumerate(writers, start=1):
+            output_path = os.path.join(output_dir, f"{base_name}_part{idx}.pdf")
+            with open(output_path, "wb") as f:
+                writer.write(f)
+
+    elif split_type == "groups":
+        # Split into multiple PDFs based on number of groups
+        num_groups = pages_or_groups if isinstance(pages_or_groups, int) else 1
+        pages_per_group = len(reader.pages) // num_groups
+
+        for group in range(num_groups):
+            writer = PdfWriter()
+            start_page = group * pages_per_group
+            end_page = len(reader.pages) if group == num_groups - 1 else start_page + pages_per_group
+
+            for i in range(start_page, end_page):
+                writer.add_page(reader.pages[i])
+
+            output_path = os.path.join(output_dir, f"{base_name}_group{group + 1}.pdf")
+            with open(output_path, "wb") as f:
+                writer.write(f)
+
+    elif split_type == "ranges":
+        # Split into individual PDFs based on user-specified ranges
+        specified_pages = set()
+        if isinstance(pages_or_groups, str):
+            matches = re.findall(r"(\d+)(?:-(\d+))?", pages_or_groups)
+            for match in matches:
+                start = int(match[0]) - 1  # Convert to zero-based index
+                end = int(match[1]) - 1 if match[1] else start
+                specified_pages.update(range(start, end + 1))
+
+        for page_number in specified_pages:
+            if 0 <= page_number < len(reader.pages):
+                writer = PdfWriter()
+                writer.add_page(reader.pages[page_number])
+                output_path = os.path.join(output_dir, f"{base_name}_page{page_number + 1}.pdf")
+                with open(output_path, "wb") as f:
+                    writer.write(f)
+    else:
+        raise ValueError("Invalid split_type. Use 'list', 'groups', or 'ranges'.")
