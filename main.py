@@ -212,29 +212,42 @@ def image_to_pdf(input_path: str) -> str:
     return output_pdf
 
 
+def compress_pdf(input_pdf: str) -> str:
+    """
+    Compresses a PDF using `pikepdf`.
+
+    :param input_pdf: List of paths to the input PDFs.
+
+    :return: Path to the compressed PDF.
+    """
+    compressed_pdf = os.path.join(OUTPUT_FOLDER, "compressed_" + os.path.basename(input_pdf))
+    with pikepdf.open(input_pdf) as pdf:
+        pdf.save(compressed_pdf)
+    return compressed_pdf
+            
+            
 def compress_pdfs(input_pdfs: list[str]) -> str:
     """
-   Compresses a PDF using `pikepdf`.
+    Compresses a PDFs using `pikepdf`.
 
-   :param input_pdfs: List of paths to the input PDFs.
+    :param input_pdfs: List of paths to the input PDFs.
 
-   :return: Path to the compressed PDF.
-   """
+    """
     with tqdm(total=len(input_pdfs), desc="Compressing PDFs") as progress_bar:
         for file in input_pdfs:
             compressed_pdf = os.path.join(OUTPUT_FOLDER, "compressed_" + os.path.basename(file))
             with pikepdf.open(INPUT_FOLDER + file) as pdf:
                 pdf.save(compressed_pdf)
                 progress_bar.update(1)
-            return compressed_pdf
+            
 
 
 def merge_pdfs(file_paths: list[str]) -> None:
     """
-   Merges multiple PDFs into a single file.
+    Merges multiple PDFs into a single file.
 
-   :param file_paths: List of paths to the input PDFs.
-   """
+    :param file_paths: List of paths to the input PDFs.
+    """
     merger = PdfMerger()
     output_path = os.path.join(OUTPUT_FOLDER, "merged_output.pdf")
     with tqdm(total=len(file_paths), desc="Merging PDFs") as progress_bar:
@@ -243,25 +256,74 @@ def merge_pdfs(file_paths: list[str]) -> None:
             progress_bar.update(1)
         merger.write(output_path)
         merger.close()
-        compress_pdfs([output_path])
+        compress_pdf(output_path)
         os.remove(output_path)
 
 
-def split_pdf(input_path: str, start_page: int, end_page: int, output_path: str) -> None:
-    """
+"""def split_pdf(input_path: str, start_page: int, end_page: int, output_path: str) -> None:
+    """"""
     Split a PDF into multiple PDFs
 
     :param input_path: Path to the input PDF
     :param start_page: Start page number
     :param end_page: End page number
     :param output_path: Path to the output PDF
-    """
+    """"""
     reader = PdfReader(input_path)
     writer = PdfWriter()
     for j in range(start_page, end_page + 1):
         writer.add_page(reader.pages[j])
     with open(output_path, "wb") as f:
         writer.write(f)
+"""
+
+def split_pdf(selected_files: list[str]) -> None:
+    """
+    Handles the splitting of PDFs based on user input.
+    
+    :param selected_files: List of selected PDF files to split.
+    """
+    for file in selected_files:
+        input_path = os.path.join(INPUT_FOLDER, file)
+        reader = PdfReader(input_path)
+        total_pages = len(reader.pages)
+
+        print(f"\nSelected file: {file}")
+        print(f"Total pages: {total_pages}")
+        print("1. Split by range (e.g., 1-3)")
+        print("2. Split pages into separate PDFs")
+        print("3. Split by a number of pages per file")
+        
+        split_option = user_input_option("Choose a split option: ", default=1)
+
+        if split_option == 1:  # Split by range
+            page_range = user_input_range(
+                "Enter page range(s) to split [e.g., 1-3,5]: ",
+                [i + 1 for i in range(total_pages)]
+            )
+            for i, page in enumerate(page_range, start=1):
+                output_path = os.path.join(OUTPUT_FOLDER, f"{os.path.splitext(file)[0]}_split_{i}.pdf")
+                split_pdf(input_path, page, page, output_path)
+                print(f"Split page {page + 1} into {output_path}")
+
+        elif split_option == 2:  # Split pages into separate PDFs
+            for page in range(total_pages):
+                output_path = os.path.join(OUTPUT_FOLDER, f"{os.path.splitext(file)[0]}_page_{page + 1}.pdf")
+                split_pdf(input_path, page, page, output_path)
+                print(f"Split page {page + 1} into {output_path}")
+
+        elif split_option == 3:  # Split by a number of pages per file
+            pages_per_file = user_input_option("Enter the number of pages per file: ", default=1)
+            for i in range(0, total_pages, pages_per_file):
+                start_page = i
+                end_page = min(i + pages_per_file - 1, total_pages - 1)
+                output_path = os.path.join(OUTPUT_FOLDER, f"{os.path.splitext(file)[0]}_split_{i // pages_per_file + 1}.pdf")
+                split_pdf(input_path, start_page, end_page, output_path)
+                print(f"Split pages {start_page + 1}-{end_page + 1} into {output_path}")
+
+        else:
+            print("Invalid split option selected. Skipping file.")
+        sleep(1)
 
 
 def convert_and_compress_files(input_files: list[str]) -> None:
@@ -281,21 +343,21 @@ def convert_and_compress_files(input_files: list[str]) -> None:
                 with tqdm(total=2, desc=f"Converting {short_name}", leave=False) as sub_bar:
                     pdf_path = docx_to_pdf(file_path)
                     sub_bar.update(1)
-                    compress_pdfs([pdf_path])
+                    compress_pdf(pdf_path)
                     sub_bar.update(1)
                     os.remove(pdf_path)
             elif ext.lower() == '.pptx':
                 with tqdm(total=2, desc=f"Converting {short_name}", leave=False) as sub_bar:
                     pdf_path = ppt_to_pdf(file_path)
                     sub_bar.update(1)
-                    compress_pdfs([pdf_path])
+                    compress_pdf(pdf_path)
                     sub_bar.update(1)
                     os.remove(pdf_path)
             elif ext.lower() in ['.jpg', '.jpeg', '.png']:
                 with tqdm(total=2, desc=f"Converting {short_name}", leave=False) as sub_bar:
                     pdf_path = image_to_pdf(file_path)
                     sub_bar.update(1)
-                    compress_pdfs([pdf_path])
+                    compress_pdf(pdf_path)
                     sub_bar.update(1)
                     os.remove(pdf_path)
             else:
@@ -323,7 +385,11 @@ def process_operation(menu_title: str, file_types: list[str], action: Callable, 
         return
     for i, file in enumerate(raw_files, start=1):
         print(f"{i}. {shorten_filename(file, 50)}")
+    if menu_title.lower() == "split pdf":
+        while True:
+            
     line = term.get_location()[0]
+    
     try:
         while True:
 
@@ -362,7 +428,7 @@ if __name__ == "__main__":
             if op == 1:
                 process_operation(
                     menu_title=MENUS[0],
-                    file_types=["png", "jpeg", "jpg", "docx", "ppt"],
+                    file_types=["png", "jpeg", "jpg", "docx", "doc", "ppt", "pptx"],
                     action=convert_and_compress_files,
                     error_message="Enter at least one file to convert"
                 )
