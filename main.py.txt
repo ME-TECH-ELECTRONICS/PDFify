@@ -307,3 +307,6 @@ def split_pdf(input_path: str, split_type: str, pages_or_groups=None) -> None:
                     writer.write(f)
     else:
         raise ValueError("Invalid split_type. Use 'list', 'groups', or 'ranges'.")
+        
+        
+                                  
